@@ -371,6 +371,46 @@ describe('models.dev Provider Presets', () => {
       },
     ]);
   });
+
+  it('maps models.dev effort levels onto effortOptions', async () => {
+    const presets = await parsePresetsForTest({
+      effort: {
+        name: 'Effort',
+        npm: '@ai-sdk/openai-compatible',
+        api: 'https://effort.example/v1',
+        models: {
+          withEffort: {
+            name: 'With effort',
+            tool_call: true,
+            reasoning: true,
+            reasoning_options: [
+              { type: 'toggle' },
+              { type: 'effort', values: ['low', 'high', 'max'] },
+            ],
+          },
+          noEffort: {
+            name: 'Toggle and budget only',
+            tool_call: true,
+            reasoning: true,
+            reasoning_options: [{ type: 'toggle' }, { type: 'budget_tokens', max: 262_144 }],
+          },
+          malformed: {
+            name: 'Malformed',
+            tool_call: true,
+            reasoning: true,
+            reasoning_options: [{ type: 'effort', values: ['low', 'low', 7, '', 'high'] }, 'nonsense'],
+          },
+        },
+      },
+    })
+
+    const byId = Object.fromEntries(
+      (presets[0]?.models ?? []).map((model) => [model.modelId, model]),
+    )
+    expect(byId.withEffort?.effortOptions).toEqual(['low', 'high', 'max'])
+    expect(byId.malformed?.effortOptions).toEqual(['low', 'high'])
+    expect(byId.noEffort?.effortOptions).toBeUndefined()
+  })
 });
 
 describe('models.dev Provider Preset snapshots', () => {

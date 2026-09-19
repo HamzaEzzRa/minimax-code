@@ -171,6 +171,7 @@ function parseModel(modelId: string, value: unknown): UserModelInputView | undef
     ...parseModelCapabilities(value),
     ...parseModelModalities(value),
     ...parseModelLimit(value),
+    ...parseModelEffort(value),
   };
 }
 
@@ -197,6 +198,16 @@ function parseModelLimit(value: Record<string, unknown>): Partial<UserModelInput
   const output = positiveInteger(limit?.output);
   if (!context && !output) return {};
   return { limit: { ...(context ? { context } : {}), ...(output ? { output } : {}) } };
+}
+
+function parseModelEffort(value: Record<string, unknown>): Partial<UserModelInputView> {
+  const raw = Array.isArray(value.reasoning_options) ? value.reasoning_options : []
+  const levels = new Set<string>()
+  for (const option of raw) {
+    if (!isRecord(option) || option.type !== 'effort') continue
+    for (const level of stringArray(option.values) ?? []) levels.add(level)
+  }
+  return levels.size > 0 ? { effortOptions: [...levels] } : {}
 }
 
 function parsePinnedProviderIds(value: unknown): string[] | undefined {
